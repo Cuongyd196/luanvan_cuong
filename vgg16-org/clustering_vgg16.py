@@ -131,14 +131,10 @@ class DEC(object):
         print('...Pretraining..., batch_size = ', batch_size)
         self.autoencoder.summary()
         self.autoencoder.compile(optimizer=optimizer, loss='mse')
-        # self.encoder.summary()
-
-        # logging file
         import csv
         import os
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-        
         csv_logger = callbacks.CSVLogger(save_dir + '/pretrain_log.csv')
         cb = [csv_logger]
         if y is not None:
@@ -147,14 +143,10 @@ class DEC(object):
                     self.x = x
                     self.y = y
                     super(PrintACC, self).__init__()
-
                 def on_epoch_end(self, epoch, logs=None):
                     if int(epochs/10) != 0 and epoch % int(epochs/10) != 0:
                         return     
-                    
-                    # features = self.x 
                     features = keras.layers.Flatten()(self.x)
-                    # print(len(features), len(features[0]), features)
                     for i in range(0, 5):
                         print(self.y[i])
                     print(self.y)
@@ -165,8 +157,6 @@ class DEC(object):
                           % (metrics.acc(self.y, y_pred), metrics.nmi(self.y, y_pred)))
 
             cb.append(PrintACC(x, y))
-
-        # begin pretraining
         t0 = time()
         self.autoencoder.fit(x, x, batch_size=batch_size, epochs=epochs, callbacks=cb)
         print('Pretraining time: %ds' % round(time() - t0))

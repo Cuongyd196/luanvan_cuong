@@ -15,6 +15,8 @@ def extract_vgg16_features(x):
     features = feature_model.predict(x)
     print('Features shape = ', features.shape)
 
+    print(features)
+
     return features
 
 def load_mnist():
