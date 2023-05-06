@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 
 
 def extract_vgg16_features(x):
@@ -101,6 +102,30 @@ def load_mnist():
     x = np.divide(x, 255.)
     print('MNIST samples', x.shape)
     return x, y
+
+def load_mnist_vgg16():
+    # the data, shuffled and split between train and test sets
+    from keras.datasets import mnist
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    x = np.concatenate((x_train, x_test))
+    y = np.concatenate((y_train, y_test)).reshape((70000,))
+
+    x=np.dstack([x] * 3)
+    x = x.reshape(-1, 28,28,3)
+    #use only 10000 samples
+    x= x[:10000]
+    y= y[:10000]
+    # extract features
+    features = np.zeros((70000, 4096))
+    for i in range(7):
+        idx = range(i*10000, (i+1)*10000)
+        print("The %dth 10000 samples" % i)
+        features[idx] = extract_vgg16_features(x[idx])
+        
+    features = np.divide(x, 255.)
+
+    print('MNIST features vgg16', features.shape)
+    return features, y
 
 
 def load_fashion_mnist():
@@ -245,11 +270,12 @@ def load_newsgroups():
     return x, y
 
 
-def load_cifar10(data_path='./data/cifar10'):
+def load_cifar10_vgg16(data_path='./data/cifar10'):
     from keras.datasets import cifar10
     (train_x, train_y), (test_x, test_y) = cifar10.load_data()
     x = np.concatenate((train_x, test_x))
     y = np.concatenate((train_y, test_y)).reshape((60000,))
+    print('x shape load_cifar10 samples', x.shape)
 
     #use only 10000 samples
     x= x[:10000]
@@ -268,6 +294,7 @@ def load_cifar10(data_path='./data/cifar10'):
         print("The %dth 10000 samples" % i)
         features[idx] = extract_vgg16_features(x[idx])
 
+    print('Features is extracted by VGG16')
     # scale to [0,1]
     from sklearn.preprocessing import MinMaxScaler
     features = MinMaxScaler().fit_transform(features)
@@ -277,6 +304,25 @@ def load_cifar10(data_path='./data/cifar10'):
     print('features saved to ' + data_path + '/cifar10_features.npy')
 
     return features, y
+
+def load_cifar10(data_path='./data/cifar10'):
+    from keras.datasets import cifar10
+    (train_x, train_y), (test_x, test_y) = cifar10.load_data()
+    x = np.concatenate((train_x, test_x))
+    y = np.concatenate((train_y, test_y))
+    #use only 10000 samples
+    x= x[:10000]
+    y= y[:10000]
+
+    # scale to [0,1]
+    x = x.astype('float32') / 255.0
+        #Reshaping X train & Test for converting 4D array to 2D
+    x = x.reshape(x.shape[0], -1)
+    y = y.reshape(y.shape[0],)
+
+    print('x shape load_cifar10 samples', x.shape)
+
+    return x, y
 
 
 def load_stl(data_path='./data/stl'):
@@ -319,6 +365,8 @@ def load_data(dataset_name):
         return load_mnist()
     elif dataset_name == 'fmnist':
         return load_fashion_mnist()
+    elif dataset_name == 'mnist_vgg16':
+        return load_mnist_vgg16()
     elif dataset_name == 'usps':
         return load_usps()
     elif dataset_name == 'pendigits':
@@ -327,6 +375,8 @@ def load_data(dataset_name):
         return load_reuters()
     elif dataset_name == 'cifar10' or dataset_name == 'cifar':
         return load_cifar10()
+    elif dataset_name == 'cifar10_vgg16' or dataset_name == 'cifar_vgg16':
+        return load_cifar10_vgg16()
     elif dataset_name == 'stl':
         return load_stl()
     else:
