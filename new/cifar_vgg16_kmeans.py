@@ -3,9 +3,10 @@ from keras.datasets import cifar10
 from keras.applications.vgg16 import VGG16
 from keras.layers import Flatten
 from sklearn.cluster import KMeans
-from sklearn import metrics
+from sklearn.metrics.cluster import normalized_mutual_info_score
 import tensorflow as tf
 import keras
+
 physical_devices = tf.config.list_physical_devices('GPU') 
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
@@ -31,16 +32,16 @@ def load_cifar10(data_path='./data/cifar10'):
     x = np.concatenate((train_x, test_x))
     y = np.concatenate((train_y, test_y)).reshape((60000,))
 
-    x= x[:20000]
-    y= y[:20000]
+    x= x[:10000]
+    y= y[:10000]
 
-    # if features are ready, return them
-    # import os.path
-    # if os.path.exists(data_path + '/cifar10_features.npy'):
-    #     return np.load(data_path + '/cifar10_features.npy'), y
+    #if features are ready, return them
+    import os.path
+    if os.path.exists(data_path + '/cifar10_features.npy'):
+        return np.load(data_path + '/cifar10_features.npy'), y
 
-    # extract features
-    features = np.zeros((20000, 4096))
+    #extract features
+    features = np.zeros((10000, 4096))
     for i in range(1):
         idx = range(i*10000, (i+1)*10000)
         print("The %dth 10000 samples" % i)
@@ -50,9 +51,11 @@ def load_cifar10(data_path='./data/cifar10'):
     from sklearn.preprocessing import MinMaxScaler
     features = MinMaxScaler().fit_transform(features)
 
-    # save features
-    #np.save(data_path + '/cifar10_features.npy', features)
-    #print('features saved to ' + data_path + '/cifar10_features.npy')
+    #save features
+    # np.save(data_path + '/cifar10_features.npy', features)
+    # print('features saved to ' + data_path + '/cifar10_features.npy')
+    # np.save(data_path + '/cifar10_features.npy', y)
+    # print('label saved to ' + data_path + '/cifar10_label.npy')
 
     return features, y
 
@@ -73,8 +76,8 @@ def cluster_acc(y_true, y_pred):
     w = np.zeros((D, D), dtype=np.int64)
     for i in range(y_pred.size):
         w[y_pred[i], y_true[i]] += 1
-    from scipy.optimize import linear_sum_assignment as linear_assignment
-    ind = linear_assignment(w.max() - w)
+    from scipy.optimize import linear_sum_assignment
+    ind = np.transpose(linear_sum_assignment(w.max() - w))
     return sum([w[i, j] for i, j in ind]) * 1.0 / y_pred.size
 
 
@@ -84,13 +87,12 @@ def main():
     # clustering
     km = KMeans(n_clusters=len(np.unique(y)), n_init=20)
     y_pred = km.fit_predict(x)
-    # acc = cluster_acc(y, y_pred)
+
     # evaluate
-    # acc = metrics.accuracy_score(y, y_pred)
-    nmi = metrics.normalized_mutual_info_score(y, y_pred)
-    ari = metrics.adjusted_rand_score(y, y_pred)
+    acc = cluster_acc(y, y_pred)
+    nmi = normalized_mutual_info_score(y, y_pred)
+    print('acc:', acc)
     print('nmi:', nmi)
-    print('ari:', ari)
 
 
 if __name__ == '__main__':

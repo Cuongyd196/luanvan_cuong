@@ -251,9 +251,14 @@ def load_cifar10(data_path='./data/cifar10'):
     x = np.concatenate((train_x, test_x))
     y = np.concatenate((train_y, test_y)).reshape((60000,))
 
+    #use only 10000 samples
+    x= x[:10000]
+    y= y[:10000]
+
     # if features are ready, return them
     import os.path
     if os.path.exists(data_path + '/cifar10_features.npy'):
+        print('load features from ' + data_path + '/cifar10_features.npy')
         return np.load(data_path + '/cifar10_features.npy'), y
 
     # extract features
